@@ -3,9 +3,12 @@ import { useSelector } from "react-redux";
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import CartItem from './CartItem';
-
+import image from "../assets/logo.png"
+import { toast } from 'react-toastify';
+import axios from "axios"
+import { useNavigate } from 'react-router-dom';
 export default function Cart() {
-
+  const navigate=useNavigate()
   const cartarr = useSelector(((state) => state));
   console.log("printing cart data", cartarr.cart)
   const [totalAmount, setTotalAmount] = useState(0);
@@ -30,29 +33,30 @@ export default function Cart() {
   }
   const buyItem = async () => {
     try {
-      console.log("inside buy course", courses)
       const res = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
       if (!res) {
         toast.error("RazorPay SDK failed to load")
         return;
 
       }
+      const toastId=toast.loading("Loading...")
       const orderResponse = await axios.post(`${import.meta.env.VITE_BASE_URL}/payment/capturePayment`,
         { totalAmount },
         { withCredentials: true }
       )
+      toast.dismiss(toastId)
       if (!orderResponse.data.success) {
         throw new Error(orderResponse.data.message);
       }
       console.log("printing order response", orderResponse)
       const optation = {
         key: "rzp_test_t4LUM04KXw6wHc",
-        order_id: orderResponse.data.message.id,
-        currency: orderResponse.data.message.currency,
-        amount: orderResponse.data.message.amount,
+        order_id: orderResponse.data.data.id,
+        currency: orderResponse.data.data.currency,
+        amount: orderResponse.data.data.amount,
         description: "Thank You for Purchasing the Course",
         name: "e-mart",
-        image: userDetails.image,
+        image:image ,
         handler: function (response) {
           verifyPayment({ ...response })
         }
@@ -82,8 +86,7 @@ export default function Cart() {
         throw new Error(response.data.message);
       }
       toast.success("payment Successful, ypou are addded to the course");
-      navigate("/home");
-    
+      navigate("/Sucess");
     }
     catch (error) {
       console.log("PAYMENT VERIFY ERROR....", error);
